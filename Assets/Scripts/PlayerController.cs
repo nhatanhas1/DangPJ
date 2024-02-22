@@ -6,7 +6,21 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
 
-    Rigidbody2D rb;
+    public enum PlayerStype
+    {
+        Cube,
+        Rocket,
+    }
+
+    public PlayerStype playerStype;
+    [SerializeField] PlayerStype playerStartSpaceShip;
+
+    [SerializeField] Rigidbody2D rbCure;
+    [SerializeField] GameObject playerCubeMesh;
+
+    //[SerializeField] Rigidbody2D rbRocket;
+
+    [SerializeField] GameObject playerRocketMesh;
 
     [SerializeField] bool isGrounded;
 
@@ -19,38 +33,50 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] float thrustForce = 5f;
     [SerializeField] float rotationSpeed = 2f;
+
+
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        //rb = GetComponent<Rigidbody2D>();
+        playerStype = playerStartSpaceShip;
+
     }
     // Start is called before the first frame update
     void Start()
     {
-
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        //float horizontalInput = Input.GetAxis("Horizontal");
-        //transform.Rotate(Vector3.forward * -horizontalInput * rotationSpeed);
-        //transform.Rotate(Vector3.forward * rb.velocity * rotationSpeed);
-
-        Vector2 velocity = rb.velocity;
-        if (velocity != Vector2.zero)
+        if (playerStype == PlayerStype.Rocket)
         {
-            float angle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
-            Quaternion targetRotation = Quaternion.AngleAxis(angle, Vector3.forward);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            Vector2 velocity = rbCure.velocity;
+            if (velocity != Vector2.zero)
+            {
+                float angle = Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg;
+                Quaternion targetRotation = Quaternion.AngleAxis(angle, Vector3.forward);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
         }
+
     }
 
     private void FixedUpdate()
     {
         //Movement();
-        //Movement2();
-        Movement3();
+        switch (playerStype)
+        {
+            case PlayerStype.Cube:
+                Movement3();
+
+                break;
+            case PlayerStype.Rocket:
+                Movement2();
+
+                break;
+
+        }
     }
 
     void PlayerInput()
@@ -61,56 +87,79 @@ public class PlayerController : MonoBehaviour
     //Rocket Move Style 1
     void Movement()
     {
-        rb.velocity = new Vector2(moveSpeed, Input.GetAxisRaw("Vertical") * turnSpeed) * Time.deltaTime * 100;
+        rbCure.velocity = new Vector2(moveSpeed, Input.GetAxisRaw("Vertical") * turnSpeed) * Time.deltaTime * 100;
     }
 
     //Rocket Move Style 2
 
     void Movement2()
     {
-        Vector2 movement = new Vector2(moveSpeed, rb.velocity.y);
-        rb.velocity = movement;
+        Vector2 movement = new Vector2(moveSpeed, rbCure.velocity.y);
+        rbCure.velocity = movement;
 
         if (Input.GetKey(KeyCode.Space))
         {
             Debug.Log("Jump");
-            if (rb.velocity.y <= 10)
+            if (rbCure.velocity.y <= 10)
             {
-                rb.AddForce(transform.up * thrustForce);
+                rbCure.AddForce(transform.up * thrustForce);
             }
         }
     }
 
+    //Cube movement
     void Movement3()
     {
-        isGrounded = Physics2D.OverlapCircle(transform.position, 0.5f, LayerMask.GetMask("Ground"));
+        isGrounded = Physics2D.OverlapCircle(transform.position, .7f, LayerMask.GetMask("Ground"));
 
-        //float horizontalInput = Input.GetAxis("Horizontal");
-        //Vector2 movement = new Vector2(horizontalInput * moveSpeed, rb.velocity.y);
-        //rb.velocity = movement;
+        Vector2 movement = new Vector2(moveSpeed, rbCure.velocity.y);
+        rbCure.velocity = movement;
 
-        Vector2 movement = new Vector2(moveSpeed, rb.velocity.y);
-        rb.velocity = movement;
-
-        if (isGrounded && Input.GetButtonDown("Jump"))
+        if (isGrounded && Input.GetKey(KeyCode.Space))
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            Debug.Log("Jump");
+            //rb.AddForce(transform.up * thrustForce);
+
+            rbCure.velocity = new Vector2(rbCure.velocity.x, jumpForce);
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    public void ChangeSpaceShip(PlayerStype newStype)
     {
-        if (collision.tag == "Wall")
+        playerCubeMesh.gameObject.SetActive(false);
+        playerRocketMesh.gameObject.SetActive(false);
+        
+        playerStype = newStype;
+
+        switch (newStype)
         {
-            Debug.Log("Hit wall");
-            transform.position = startLocation.position;
-            rb.velocity = Vector2.zero;
+
+            case PlayerStype.Cube:
+                playerStype = newStype;
+                rbCure.gravityScale = 2;
+                rbCure.velocity = Vector2.zero;
+
+                playerCubeMesh.gameObject.SetActive(true);
+                break;
+            case PlayerStype.Rocket:
+                rbCure.velocity = Vector2.zero;
+                rbCure.gravityScale = 1;
+
+                playerRocketMesh.gameObject.SetActive(true);
+
+                break;
         }
 
-        if(collision.tag == "EndPoint")
-        {
-            collision.GetComponentInParent<EndPoint>().NextLevel();
-        }
+    }
+
+
+
+    public void ReStart()
+    {
+        ChangeSpaceShip(playerStartSpaceShip);
+        transform.position = startLocation.position;
+
+
     }
 
 

@@ -1,9 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-public class EndPoint : MonoBehaviour
+public class Spine : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
@@ -17,8 +16,13 @@ public class EndPoint : MonoBehaviour
         
     }
 
-    public void NextLevel()
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        SceneManager.LoadScene(1);
+        if (collision.tag == "Player")
+        {
+            Debug.Log("Hit Spine");
+            collision.GetComponentInParent<PlayerController>().ReStart();
+        }
+
     }
 }
